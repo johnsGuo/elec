@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans  xmlns="http://www.springframework.org/schema/beans"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xmlns:aop="http://www.springframework.org/schema/aop"
+        xmlns:tx="http://www.springframework.org/schema/tx"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:mvc="http://www.springframework.org/schema/mvc"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans
+		                    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		                    http://www.springframework.org/schema/context
+		                    http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		                    http://www.springframework.org/schema/tx
+		                    http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+		                    http://www.springframework.org/schema/aop
+		                    http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+                            http://www.springframework.org/schema/mvc
+                            http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd"
+                            default-autowire="byName">
+
+
+    <!-- 1：注解的方式，引入组件的自动扫描，在类和方法上可以添加对注解的支持 -->
+    <context:component-scan base-package="com.ggr.dao,com.ggr.service"/>
+    <!-- 2:引入数据库配置文件 -->
+
+    <!-- 配置数据源 -->
+    <context:property-placeholder location="classpath:db.properties"/>
+
+    <!-- datasource,这里的话一定要手动将datesources交给事务管理bean(transactionManager)管理，否者会报错 -->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+
+        <property name="driverClass" value="${jdbc.driverClass}"/>
+        <property name="jdbcUrl" value="${jdbc.jdbcUrl}" />
+        <property name="user" value="${jdbc.user}" />
+        <property name="password" value="${jdbc.password}"/>
+
+        <!-- 数据库连接池保持的最小连接数 -->
+        <property name="minPoolSize" value="${pool.minPoolSize}" />
+        <property name="maxPoolSize" value="${pool.maxPoolSize}" />
+    </bean>
+
+
+    <!-- 3:创建sessionFactory对象，这是spring整合hibernate的核心 -->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+        <!-- 配置数据源属性 -->
+        <property name="dataSource" ref="dataSource"></property>
+
+        <property name="mappingLocations" value="classpath:mapper/*.hbm.xml"/>
+
+        <!-- 配置Hibernate 的常用属性 -->
+        <property name="hibernateProperties">
+            <props>
+                <!-- 数据库的方言 -->
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQLInnoDBDialect</prop>
+                <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.format_sql">true</prop>
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+            </props>
+        </property>
+    </bean>
+
+    <!-- 4:创建事务管理器 -->
+    <!-- 配置事务管理器 -->
+    <bean id="transactionManager"
+          class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory" />
+      <!--  <property name="dataSource" ref="dataSource"></property>-->
+    </bean>
+
+    <!--开启spring事务注解-->
+    <tx:annotation-driven transaction-manager="transactionManager" />
+
+</beans>
